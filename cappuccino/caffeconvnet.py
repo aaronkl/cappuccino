@@ -31,9 +31,11 @@ class TerminationCriterionTestAccuracy(TerminationCriterion):
         self.test_accuracy_stop_countdown = test_accuracy_stop_countdown
 
     def add_to_solver_param(self, solver, iter_per_epoch, tests_per_epoch):
+        pass
         solver.termination_criterion.append(caffe_pb2.SolverParameter.TEST_ACCURACY)
         #stop, when no improvement for X epoches
         solver.test_accuracy_stop_countdown = self.test_accuracy_stop_countdown * tests_per_epoch
+
 
 class TerminationCriterionDivergenceDetection(TerminationCriterion):
     def __init__(self):
@@ -44,6 +46,7 @@ class TerminationCriterionDivergenceDetection(TerminationCriterion):
 
     def add_to_solver_param(self, solver, iter_per_epoch, tests_per_epoch):
         solver.termination_criterion.append(caffe_pb2.SolverParameter.DIVERGENCE_DETECTION)
+
 
 class TerminationCriterionExternal(TerminationCriterion):
 
@@ -68,6 +71,7 @@ class TerminationCriterionExternalInBackground(TerminationCriterion):
         solver.external_term_criterion_cmd = self.external_cmd
         solver.external_term_criterion_num_iter = self.run_every_x_epochs * iter_per_epoch
 
+
 class CaffeConvNet(object):
     """
         Runs a caffe convnet with the given parameters
@@ -91,6 +95,8 @@ class CaffeConvNet(object):
                  device = "GPU",
                  device_id = 0,
                  seed=13,
+                 snapshot_prefix="caffenet",
+                 config_prefix="caffenet",
                  snapshot_on_exit = 0):
         """
             Parameters of the network as defined by ConvNetSearchSpace.
@@ -117,6 +123,7 @@ class CaffeConvNet(object):
             device_id: the id of the device to run the experiment on
             snapshot_on_exit: save network on exit?
         """
+        self._snapshot_prefix = snapshot_prefix
         self._train_file = train_file
         self._valid_file = valid_file
         self._test_file = test_file
@@ -149,7 +156,7 @@ class CaffeConvNet(object):
         self._seed = seed
         self._snapshot_on_exit = snapshot_on_exit
 
-        self._base_name = "caffenet"
+        self._base_name = config_prefix
 
         self._train_network_file = self._base_name + "_train.prototxt"
         self._valid_network_file = self._base_name + "_valid.prototxt"
@@ -158,7 +165,6 @@ class CaffeConvNet(object):
 
         self._convert_params_to_caffe_network(copy.deepcopy(params))
         self._create_train_valid_networks()
-
 
     def _convert_params_to_caffe_network(self, params):
         """
@@ -189,7 +195,6 @@ class CaffeConvNet(object):
                                                    fc_layer_params)
 
         self._create_network_parameters(network_params)
-
 
     def _create_train_valid_networks(self):
         """
@@ -227,7 +232,6 @@ class CaffeConvNet(object):
             self._caffe_net_test.name = "test"
             self._caffe_net_test.layers[0].hdf5_data_param.source = self._test_file
             self._caffe_net_test.layers[0].hdf5_data_param.batch_size = self._batch_size_test
- 
 
     def _add_softmax_accuray_layers(self, caffe_net):
         """add a softmax and an accuracy layer to the net."""
@@ -246,7 +250,6 @@ class CaffeConvNet(object):
         prob_layer.bottom.append("prob")
         prob_layer.bottom.append("label")
         prob_layer.top.append("accuracy")
-
 
     def _create_data_layer(self, params):
         data_layer = self._caffe_net.layers.add()
@@ -289,10 +292,7 @@ class CaffeConvNet(object):
 
             prev_layer_name = current_layer_name
 
-
         return prev_layer_name, output_size
-
-
 
     def _create_conv_layer(self, current_layer_base_name, prev_layer_name, params, image_size):
         """
@@ -599,13 +599,13 @@ class CaffeConvNet(object):
         elif lr_policy == "inv":
             half_life = train_iter_per_epoch * float(lr_policy_params.pop("half_life"))
             power = lr_policy_params.pop("power")
-            self._solver.gamma = (2.**(1./power) - 1.) / half_life
+            self._solver.gamma = (2. ** (1. / power) - 1.) / half_life
             self._solver.power = power
         elif lr_policy == "inv_bergstra_bengio":
             #is this parametrization correct?
             half_life = train_iter_per_epoch * float(lr_policy_params.pop("half_life"))
             tau = 0.5 * half_life
-            self._solver.stepsize = int(train_iter_per_epoch  * lr_policy_params.pop("epochcount"))
+            self._solver.stepsize = int(train_iter_per_epoch * lr_policy_params.pop("epochcount"))
         assert len(lr_policy_params) == 0, "More learning policy arguments given, than needed, " + str(lr_policy_params)
 
         self._solver.momentum = params.pop("momentum")
@@ -620,14 +620,14 @@ class CaffeConvNet(object):
         for termination_criterion in self._termination_criterions:
             termination_criterion.add_to_solver_param(self._solver,
                 iter_per_epoch=self._num_train / self._batch_size_train,
-                tests_per_epoch=int(1./self._test_every_x_epoch))
-            
+                tests_per_epoch=int(1. / self._test_every_x_epoch))
+
         self._solver.random_seed = self._seed
         #test X times per epoch:
         self._solver.test_interval = max(1, int(self._test_every_x_epoch * train_iter_per_epoch))
         self._solver.display = max(1, int(0.01 * train_iter_per_epoch))
         self._solver.snapshot = 0
-        self._solver.snapshot_prefix = "caffenet"
+        self._solver.snapshot_prefix = self._snapshot_prefix
         if self._device == "CPU":
             self._solver.solver_mode = caffe_pb2.SolverParameter.CPU
         elif self._device == "GPU":

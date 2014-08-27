@@ -31,6 +31,7 @@ def update_ybest(y_candidate):
    else:
         return ybest_curr
 
+
 def store_result(dirname, params, loss, total_time, learning_curves,
     learning_curve_timestamps, predicted_loss=None, extra={}):
     """
@@ -51,6 +52,7 @@ def store_result(dirname, params, loss, total_time, learning_curves,
         result_line.update(extra)
         result_file.write(json.dumps(result_line))
         result_file.write("\n")
+
 
 def log_error(dirname, error_msg):
     """
@@ -120,10 +122,13 @@ def hpolib_experiment_main(params, construct_caffeconvnet,
         caffe_convnet_params = hpolib_to_caffenet(params)
 
         output_log = construct_caffeconvnet(caffe_convnet_params).run()
+
         learning_curves, learning_curve_timestamps = learning_curve_from_log(output_log.split("\n"))
+
         if "valid" not in learning_curves:
             log_error(experiment_dir, output_log)
             raise Exception("no learning curve found")
+
         valid_learning_curve = learning_curves["valid"]
         best_accuracy = np.mean(valid_learning_curve[-mean_performance_on_last:])
         if not np.isfinite(best_accuracy):

@@ -3,9 +3,9 @@ from math import log, exp
 
 class Parameter(object):
     def __init__(self, min_val, max_val,
-                 default_val = None,
-                 is_int = False,
-                 log_scale = False):
+                 default_val=None,
+                 is_int=False,
+                 log_scale=False):
         assert(min_val < max_val)
         self.min_val = min_val
         self.max_val = max_val
@@ -39,7 +39,7 @@ class Parameter(object):
             self.default_val,
             self.is_int,
             self.log_scale)
-    
+
     def __repr__(self):
         return self.__str__()
 
@@ -353,7 +353,6 @@ class ConvNetSearchSpace(object):
         params["weight-weight-decay_multiplier"] = 1
         params["bias-weight-decay_multiplier"] = 0
 
-
         last_layer = layer_idx == self.max_fc_layers
         if not last_layer:
             params["num_output_x_128"] = Parameter(1, self.fc_layer_max_num_output_x_128,
@@ -365,7 +364,7 @@ class ConvNetSearchSpace(object):
                                                              default_val=0.5,
                                                              is_int=False)},
                                  {"type": "no_dropout"}]
-                                  
+
         else:
             params["num_output"] = self.num_classes
             params["activation"] = "none"
@@ -378,6 +377,7 @@ class ConvNetSearchSpace(object):
             How many parameters are there to be optimized.
         """
         count = 0
+
         def count_params(subspace):
             if isinstance(subspace, Parameter):
                 return 1
@@ -422,7 +422,14 @@ class LeNet5(ConvNetSearchSpace):
         super(LeNet5, self).__init__(max_conv_layers=2,
                                      max_fc_layers=2,
                                      num_classes=10,
-                                     input_dimension=(32,1,1))
+                                     input_dimension=(1,28,28))
+
+    def get_preprocessing_parameter_subspace(self):
+        params = super(LeNet5, self).get_preprocessing_parameter_subspace()
+
+        params["augment"] = [{"type": "none"}]
+        params["input_dropout"] = {"type": "no_dropout"}
+	return params
 
     def get_network_parameter_subspace(self):
         #we don't change the network parameters
@@ -440,6 +447,9 @@ class LeNet5(ConvNetSearchSpace):
             params["pooling"] = {"type": "max",
                                  "stride": 2,
                                  "kernelsize": 2}
+
+ 	    if "kernelsize_odd" in params:
+	        params.pop("kernelsize_odd")
         elif layer_idx == 1:
             params["kernelsize"] = 5
             params["stride"] = 1
@@ -447,7 +457,9 @@ class LeNet5(ConvNetSearchSpace):
             params["pooling"] = {"type": "max",
                                  "stride": 2,
                                  "kernelsize": 2}
- 
+  	    if "kernelsize_odd" in params:
+	        params.pop("kernelsize_odd")
+	
         return params
 
     def get_fc_layer_subspace(self, layer_idx):
@@ -456,7 +468,8 @@ class LeNet5(ConvNetSearchSpace):
             params["num_output"] = 120
         elif layer_idx == 1:
             params["num_output"] = 84
-
+	if "num_output_x_128" in params:
+		params.pop("num_output_x_128")
         return params
 
 
@@ -747,3 +760,76 @@ class Pylearn2Convnet(ConvNetSearchSpace):
 
         return params
 
+
+class Cifar10KmeansFeedForwardNet(ConvNetSearchSpace):
+    """
+        A search space of a flexible feed-forward network on kmeans features on cifar 10
+
+    """
+
+    def __init__(self, input_dimension):
+        super(Cifar10KmeansFeedForwardNet, self).__init__(max_conv_layers=0,
+                                                 max_fc_layers=3,
+                                                 num_classes=10,
+                                                 input_dimension=input_dimension,
+                                                 fc_layer_max_num_output_x_128=16)
+
+    def get_preprocessing_parameter_subspace(self):
+        params = super(Cifar10KmeansFeedForwardNet, self).get_preprocessing_parameter_subspace()
+
+        params["augment"] = [{"type": "none"}]
+        params["input_dropout"] = {"type": "no_dropout"}
+
+        return params
+
+    def get_network_parameter_subspace(self):
+        network_params = super(Cifar10KmeansFeedForwardNet, self).get_network_parameter_subspace()
+        #fix the number of layers
+        network_params["num_conv_layers"] = 0
+        #network_params["num_fc_layers"] = self.max_fc_layers
+        network_params["momentum"].min_val = 0.5
+        network_params["momentum"].max_val = 0.9
+        network_params["momentum"].default = 0.7
+        network_params["lr"].min_val = 0.0005
+        network_params["lr"].max_val = 0.05
+        network_params["lr"].default = 0.001
+        network_params["lr"].log_scale = True
+        network_params["weight_decay"].min_val = 0.000001
+        network_params["weight_decay"].max_val = 0.001
+        network_params["weight_decay"].default = 0.0001
+        network_params["weight_decay"].log_scale = True
+
+        inv_policy = {"type": "inv",
+                      "half_life": Parameter(1, self.lr_half_life_max_epoch, is_int=False),
+                      "power": Parameter(0.98, 0.99,
+                                         is_int=False, log_scale=True)}
+        network_params["lr_policy"] = [inv_policy]
+
+        return network_params
+
+    def get_fc_layer_subspace(self, layer_idx):
+        params = super(Cifar10KmeansFeedForwardNet, self).get_fc_layer_subspace(layer_idx)
+        params["weight-filler"] = {"type": "gaussian",
+                                    "std": Parameter(0.001, 0.1,
+                                                     default_val=0.005,
+                                                     log_scale=True,
+                                                     is_int=False)}
+
+        params["bias-filler"] = {"type": "const-zero"}
+
+        params["weight-lr-multiplier"] = 1
+        params["bias-lr-multiplier"] = 1
+
+        last_layer = layer_idx == self.max_fc_layers
+        if not last_layer:
+            params["num_output_x_128"] = Parameter(6, self.fc_layer_max_num_output_x_128,
+                default_val=min(8, self.fc_layer_max_num_output_x_128),
+                is_int=True,)
+            params["activation"] = "relu"
+            params["dropout"] = {"type": "no_dropout"}
+        else:
+            params["num_output"] = self.num_classes
+            params["activation"] = "none"
+            params["dropout"] = {"type": "no_dropout"}
+
+        return params
