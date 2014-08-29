@@ -843,7 +843,7 @@ class Cifar10KmeansArchSearch(ConvNetSearchSpace):
     """
 
     def __init__(self, input_dimension):
-        super(Cifar10KmeansFeedForwardNet, self).__init__(max_conv_layers=0,
+        super(Cifar10KmeansArchSearch, self).__init__(max_conv_layers=0,
                                                  max_fc_layers=3,
                                                  num_classes=10,
                                                  input_dimension=input_dimension,
