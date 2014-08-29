@@ -691,7 +691,6 @@ class Pylearn2Convnet(ConvNetSearchSpace):
 
         return network_params
 
-
     def get_conv_layer_subspace(self, layer_idx):
         params = super(Pylearn2Convnet, self).get_conv_layer_subspace(layer_idx)
         #first parameters that are common to all layers:
@@ -873,12 +872,10 @@ class Cifar10KmeansArchSearch(ConvNetSearchSpace):
         inv_policy = {"type": "inv",
                       "half_life": Parameter(1, self.lr_half_life_max_epoch, is_int=False),
                       "power": Parameter(0.98, 0.99,
-                                         is_int=False, log_scale=True),
-                      "gamma": Parameter(0.00001, 0.001, is_int=False, log_scale=True)}
+                                         is_int=False, log_scale=True)}
 
         inv_policy["half_life"] = 1
         inv_policy["power"] = 0.98
-        inv_policy["gamma"] = 0.001
 
         network_params["lr_policy"] = [inv_policy]
 
