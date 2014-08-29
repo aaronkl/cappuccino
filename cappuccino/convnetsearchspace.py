@@ -868,8 +868,10 @@ class Cifar10KmeansArchSearch(ConvNetSearchSpace):
 
         network_params["weight_decay"] = 0.001
 
-        inv_policy = []
-        inv_policy["type"] = "inv"
+        inv_policy = {"type": "inv",
+                      "half_life": Parameter(1, 1, is_int=False),
+                      "power": Parameter(0.98, 0.98,is_int=False, log_scale=True)}
+
         inv_policy["half_life"] = 1
         inv_policy["power"] = 0.98
         network_params["lr_policy"] = [inv_policy]
