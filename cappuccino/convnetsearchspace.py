@@ -459,7 +459,7 @@ class LeNet5(ConvNetSearchSpace):
                                  "kernelsize": 2}
   	    if "kernelsize_odd" in params:
 	        params.pop("kernelsize_odd")
-	
+
         return params
 
     def get_fc_layer_subspace(self, layer_idx):
@@ -543,7 +543,7 @@ class Cifar10CudaConvnet(ConvNetSearchSpace):
             params["kernelsize"] = 3
             params["stride"] = 1
             params["pooling"] = {"type": "none"}
- 
+
         return params
 
     def get_fc_layer_subspace(self, layer_idx):
@@ -563,7 +563,7 @@ class Cifar10CudaConvnet(ConvNetSearchSpace):
 class Cifar10ConvFixed(ConvNetSearchSpace):
     """
         A search space, where the convolutional architecture is fixed
-        in that the number of convolutional layers as well as the 
+        in that the number of convolutional layers as well as the
         pooling size is fixed. This way we make sure to avoid
         that the image becomes too small do too structural changes.
     """
@@ -623,7 +623,7 @@ class Cifar10ConvFixed(ConvNetSearchSpace):
             params["pooling"] = {"type": "none"}
         else:
             assert False, "unexpected layer index %d" % layer_idx
- 
+
         return params
 
     def get_fc_layer_subspace(self, layer_idx):
@@ -636,6 +636,7 @@ class Cifar10ConvFixed(ConvNetSearchSpace):
         params["bias-weight-decay_multiplier"] = 0
 
         return params
+
 
 class NoDataAugmentationConvNetSearchSpace(ConvNetSearchSpace):
     """Convnet search space, but with data augmentation disabled."""
@@ -803,6 +804,74 @@ class Cifar10KmeansFeedForwardNet(ConvNetSearchSpace):
                       "half_life": Parameter(1, self.lr_half_life_max_epoch, is_int=False),
                       "power": Parameter(0.98, 0.99,
                                          is_int=False, log_scale=True)}
+        network_params["lr_policy"] = [inv_policy]
+
+        return network_params
+
+    def get_fc_layer_subspace(self, layer_idx):
+        params = super(Cifar10KmeansFeedForwardNet, self).get_fc_layer_subspace(layer_idx)
+        params["weight-filler"] = {"type": "gaussian",
+                                    "std": Parameter(0.001, 0.1,
+                                                     default_val=0.005,
+                                                     log_scale=True,
+                                                     is_int=False)}
+
+        params["bias-filler"] = {"type": "const-zero"}
+
+        params["weight-lr-multiplier"] = 1
+        params["bias-lr-multiplier"] = 1
+
+        last_layer = layer_idx == self.max_fc_layers
+        if not last_layer:
+            params["num_output_x_128"] = Parameter(6, self.fc_layer_max_num_output_x_128,
+                default_val=min(8, self.fc_layer_max_num_output_x_128),
+                is_int=True,)
+            params["activation"] = "relu"
+            params["dropout"] = {"type": "no_dropout"}
+        else:
+            params["num_output"] = self.num_classes
+            params["activation"] = "none"
+            params["dropout"] = {"type": "no_dropout"}
+
+        return params
+
+
+class Cifar10KmeansArchSearch(ConvNetSearchSpace):
+    """
+        A search space of a structure search of a feed forward network for the kmeans-cifar-10 data set
+
+    """
+
+    def __init__(self, input_dimension):
+        super(Cifar10KmeansFeedForwardNet, self).__init__(max_conv_layers=0,
+                                                 max_fc_layers=3,
+                                                 num_classes=10,
+                                                 input_dimension=input_dimension,
+                                                 fc_layer_max_num_output_x_128=16)
+
+    def get_preprocessing_parameter_subspace(self):
+        params = super(Cifar10KmeansFeedForwardNet, self).get_preprocessing_parameter_subspace()
+
+        params["augment"] = [{"type": "none"}]
+        params["input_dropout"] = {"type": "no_dropout"}
+
+        return params
+
+    def get_network_parameter_subspace(self):
+        network_params = super(Cifar10KmeansFeedForwardNet, self).get_network_parameter_subspace()
+        #fix the number of layers
+        network_params["num_conv_layers"] = 0
+        #network_params["num_fc_layers"] = self.max_fc_layers
+        network_params["momentum"] = 0.5
+
+        network_params["lr"] = 0.005
+
+        network_params["weight_decay"] = 0.001
+
+        inv_policy = []
+        inv_policy["type"] = "inv"
+        inv_policy["half_life"] = 1
+        inv_policy["power"] = 0.98
         network_params["lr_policy"] = [inv_policy]
 
         return network_params
