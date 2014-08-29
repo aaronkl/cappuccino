@@ -850,7 +850,7 @@ class Cifar10KmeansArchSearch(ConvNetSearchSpace):
                                                  fc_layer_max_num_output_x_128=16)
 
     def get_preprocessing_parameter_subspace(self):
-        params = super(Cifar10KmeansFeedForwardNet, self).get_preprocessing_parameter_subspace()
+        params = super(Cifar10KmeansArchSearch, self).get_preprocessing_parameter_subspace()
 
         params["augment"] = [{"type": "none"}]
         params["input_dropout"] = {"type": "no_dropout"}
@@ -858,7 +858,7 @@ class Cifar10KmeansArchSearch(ConvNetSearchSpace):
         return params
 
     def get_network_parameter_subspace(self):
-        network_params = super(Cifar10KmeansFeedForwardNet, self).get_network_parameter_subspace()
+        network_params = super(Cifar10KmeansArchSearch, self).get_network_parameter_subspace()
         #fix the number of layers
         network_params["num_conv_layers"] = 0
         #network_params["num_fc_layers"] = self.max_fc_layers
@@ -877,7 +877,7 @@ class Cifar10KmeansArchSearch(ConvNetSearchSpace):
         return network_params
 
     def get_fc_layer_subspace(self, layer_idx):
-        params = super(Cifar10KmeansFeedForwardNet, self).get_fc_layer_subspace(layer_idx)
+        params = super(Cifar10KmeansArchSearch, self).get_fc_layer_subspace(layer_idx)
         params["weight-filler"] = {"type": "gaussian",
                                     "std": Parameter(0.001, 0.1,
                                                      default_val=0.005,
