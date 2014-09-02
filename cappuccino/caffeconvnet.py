@@ -85,19 +85,19 @@ class CaffeConvNet(object):
                  num_test=None,
                  mean_file=None,
                  scale_factor=None,
-                 batch_size_valid = 100,
-                 batch_size_test = 100,
-                 test_every_x_epoch = 0.1,
-                 termination_criterions = [TerminationCriterionTestAccuracy(5)],
+                 batch_size_valid=100,
+                 batch_size_test=100,
+                 test_every_x_epoch=0.1,
+                 termination_criterions=[TerminationCriterionTestAccuracy(5)],
                  input_image_size=None,
                  min_image_size=None,
                  restrict_to_legal_configurations=False,
-                 device = "GPU",
-                 device_id = 0,
+                 device="GPU",
+                 device_id=0,
                  seed=13,
                  snapshot_prefix="caffenet",
                  config_prefix="caffenet",
-                 snapshot_on_exit = 0):
+                 snapshot_on_exit=0):
         """
             Parameters of the network as defined by ConvNetSearchSpace.
 
@@ -174,7 +174,8 @@ class CaffeConvNet(object):
         self._solver = caffe_pb2.SolverParameter()
 
         preproc_params, all_conv_layers_params, all_fc_layers_params, network_params = params
-
+        import logging
+        logging.debug("all fc layers: " + str(len(all_fc_layers_params)))
         prev_layer_name, image_size = self._create_data_layer(preproc_params)
 
         assert len(all_conv_layers_params) == network_params['num_conv_layers']
@@ -229,9 +230,20 @@ class CaffeConvNet(object):
         if self._test_file is not None:
             self._caffe_net_test = copy.deepcopy(self._caffe_net)
             self._add_softmax_accuray_layers(self._caffe_net_test)
+            #self._add_softmax_layers(self._caffe_net_test)
             self._caffe_net_test.name = "test"
             self._caffe_net_test.layers[0].hdf5_data_param.source = self._test_file
             self._caffe_net_test.layers[0].hdf5_data_param.batch_size = self._batch_size_test
+
+    def _add_softmax_layers(self, caffe_net):
+        """add a softmax layer to the net."""
+        #softmax layer:
+        last_layer_top = caffe_net.layers[-1].top[0]
+        prob_layer = caffe_net.layers.add()
+        prob_layer.name = "prob"
+        prob_layer.type = caffe_pb2.LayerParameter.SOFTMAX
+        prob_layer.bottom.append(last_layer_top)
+        prob_layer.top.append("prob")
 
     def _add_softmax_accuray_layers(self, caffe_net):
         """add a softmax and an accuracy layer to the net."""
@@ -378,7 +390,7 @@ class CaffeConvNet(object):
 
         #calculate the output image size after the convolution operation:
         if image_size is not None:
-            output_image_size = (image_size + 2 * pad_size - kernelsize) / kernelstride + 1;
+            output_image_size = (image_size + 2 * pad_size - kernelsize) / kernelstride + 1
         else:
             output_image_size = None
 
@@ -475,7 +487,6 @@ class CaffeConvNet(object):
 
             prev_layer_name = current_layer_name
 
-
         #Dropout
         dropout_params = params.pop("dropout")
         if dropout_params["type"] == "dropout":
@@ -489,7 +500,7 @@ class CaffeConvNet(object):
             caffe_dropout_layer.top.append(current_layer_name)
 
             prev_layer_name = current_layer_name
- 
+
         assert len(params) == 0, "More convolution parameters given than needed: " + str(params)
 
         return prev_layer_name, output_image_size
@@ -538,7 +549,6 @@ class CaffeConvNet(object):
         else:
             raise RuntimeError("unknown bias-filler %s" % (bias_filler_params["type"]))
 
-
         prev_layer_name = current_layer_name
 
         #RELU
@@ -551,7 +561,6 @@ class CaffeConvNet(object):
             caffe_relu_layer.bottom.append(prev_layer_name)
             #Note: the operation is made in-place by using the same name twice
             caffe_relu_layer.top.append(prev_layer_name)
-
 
         #Dropout
         dropout_params = params.pop("dropout")
