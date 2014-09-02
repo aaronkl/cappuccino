@@ -12,7 +12,7 @@ import numpy as np
 from collections import defaultdict
 from caffe.proto import caffe_pb2
 from cappuccino.paramutil import hpolib_to_caffenet
-from cappuccino.ensembles import predict, create_test_config
+from cappuccino.ensembles import predict, weighted_ensemble
 
 
 def get_current_ybest():
@@ -199,6 +199,89 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
             pred_labels = np.argmax(ensemble_pred, axis=1)
             acc = float(np.count_nonzero(true_labels.T[0] == pred_labels)) / npoints
             error = 1 - acc
+        else:
+            cPickle.dump(np.array([pred]), open("predictions.pkl", 'wb'))
+            pred_labels = np.argmax(pred, axis=1)
+            npoints = pred.shape[0]
+            acc = float(np.count_nonzero(true_labels.T[0] == pred_labels)) / npoints
+            error = 1 - acc
+        return error
+
+    except Exception:
+        print "Unexpected error:", sys.exc_info()[0]
+        print "Trackback: ", traceback.format_exc()
+        log_error(experiment_dir, str(sys.exc_info()[0]))
+        log_error(experiment_dir, str(traceback.format_exc()))
+        #maximum loss:
+        return 1.0
+
+
+def hpolib_experiment_weighted_ensemble_main(params, construct_caffeconvnet,
+    experiment_dir, working_dir, mean_performance_on_last, **kwargs):
+    """
+        params: parameters coming directly from hpolib
+        construct_caffeconvnet: a function that takes caffeconvnet parameters and constructs a CaffeConvNet
+        mean_performance_on_last: take average of the last x values from the validation network as the reported performance.
+    """
+    try:
+        caffe_convnet_params = hpolib_to_caffenet(params)
+
+        caffeconvnet = construct_caffeconvnet(caffe_convnet_params)
+        output_log = caffeconvnet.run()
+
+        #create a temporary caffe-config for the prediction
+        test_config = working_dir + "/caffenet_test.prototxt"
+        test_net = copy.deepcopy(caffeconvnet._caffe_net)
+        test_net.name = "test"
+        test_net.layers[0].hdf5_data_param.source = caffeconvnet._valid_file
+        test_net.layers[0].hdf5_data_param.batch_size = caffeconvnet._batch_size_valid
+
+        last_layer_top = test_net.layers[-1].top[0]
+        prob_layer = test_net.layers.add()
+        prob_layer.name = "prob"
+        prob_layer.type = caffe_pb2.LayerParameter.SOFTMAX
+        prob_layer.bottom.append(last_layer_top)
+        prob_layer.top.append("prob")
+
+        with open(test_config, "wb") as fh:
+            fh.write(str(test_net))
+            fh.close()
+
+        model = get_last_model_snapshot(output_log.split("\n"))
+        model = working_dir + "/" + model
+        if model == None:
+            log_error(experiment_dir, output_log)
+            raise Exception("no valid model found")
+
+        batch_size = caffeconvnet._batch_size_valid
+        valid_file = caffeconvnet._valid_file
+        valid = open(valid_file, 'r').readline().strip('\n')
+        #load valid data labels
+        f = h5py.File(valid, "r")
+        l = f['label']
+        true_labels = np.array(l)
+        f.close()
+
+        ndata = true_labels.shape[0]
+        assert ndata > 0
+
+        nclasses = np.unique(true_labels).shape[0]
+        assert nclasses > 2
+
+        #predictions of current model
+        pred = predict(test_config, model.strip('\n'), ndata, nclasses, batch_size)
+        #check if predictions.pkl already exist
+        if os.path.exists("predictions.pkl"):
+            #load previous predictions
+            predictions = cPickle.load(open("predictions.pkl", 'rb'))
+            #ensemble prediction
+            predictions = np.concatenate((predictions, np.array([pred])), axis=0)
+            #save predictions
+            cPickle.dump(predictions, open("predictions.pkl", 'wb'))
+            #check how many predictions are correct
+            error, weights = weighted_ensemble(predictions, true_labels, method="cma")
+            logging.debug("weights: " + str(weights))
+            cPickle.dump(weights, open("weights.pkl", 'wb'))
         else:
             cPickle.dump(np.array([pred]), open("predictions.pkl", 'wb'))
             pred_labels = np.argmax(pred, axis=1)

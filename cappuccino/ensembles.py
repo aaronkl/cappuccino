@@ -8,10 +8,68 @@ import h5py
 import logging
 import numpy as np
 
+import cma
+
 from google.protobuf import text_format
 
 from caffe.proto import caffe_pb2
 from caffe.classifier import Classifier
+
+from scipy import optimize
+
+
+def weighted_error(weights, *args):
+    predicitons = args[0]
+
+    true_labels = args[1]
+    npoints = predicitons.shape[1]
+    nclasses = predicitons.shape[2]
+    comp_labels = np.zeros([npoints, nclasses])
+
+    for i, p in enumerate(predicitons):
+        labels = np.argmax(p, axis=1)
+        y = np.zeros(comp_labels.shape)
+        for j in xrange(0, y.shape[0]):
+            y[j, labels[j]] = 1
+        comp_labels += weights[i] * y
+
+    comp_labels += 0.5
+    comp_labels = np.floor(comp_labels)
+
+    #check how many predictions are correct
+    acc = float(np.count_nonzero(true_labels.T[0] == np.argmax(comp_labels, axis=1))) / npoints
+
+    return 1 - acc
+
+
+def weight_constraint(x, *args):
+    return 1 - np.sum(x)
+
+
+def weighted_ensemble(predictions, true_labels, method="cma"):
+    predictions = np.array(predictions)
+    num_nets = predictions.shape[0]
+    weights = np.ones([num_nets]) / num_nets
+    if method == "local":
+        bounds = [(0., 1.)]
+        for i in xrange(1, weights.shape[0]):
+            bounds.append((0, 1))
+
+        weights = optimize.fmin_slsqp(weighted_error, weights, args=(predictions, true_labels), eqcons=[weight_constraint, ], epsilon=0.5, bounds=bounds)
+        #weights, f_min, info = optimize.fmin_l_bfgs_b(weighted_error, weights, args=(predictions, true_labels), approx_grad=True, epsilon=0.1)
+
+    elif method == "cma":
+        bounds = [0, 1]
+        if not weights.shape[0] == 1:
+            #CMA does not work in a 1-D space
+            res = cma.fmin(weighted_error, weights, sigma0=0.25, args=(predictions, true_labels), options={'bounds': [0, 1]})
+            #hacky, it sums the weights to 1
+            weights = res[0] / np.sum(res[0])
+        else:
+            logging.error("CMA does not work in a 1D space")
+
+    err = weighted_error(weights, predictions, true_labels)
+    return err, weights
 
 
 def predict(config, model, ndata, nclasses, batch_size, image_dims=(6400, 1)):
