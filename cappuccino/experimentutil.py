@@ -13,7 +13,6 @@ from collections import defaultdict
 from caffe.proto import caffe_pb2
 from cappuccino.paramutil import hpolib_to_caffenet
 from cappuccino.ensembles import predict, create_test_config
-from duplicity.progress import Snapshot
 
 
 def get_current_ybest():
