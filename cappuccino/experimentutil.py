@@ -12,7 +12,7 @@ import numpy as np
 from collections import defaultdict
 from caffe.proto import caffe_pb2
 from cappuccino.paramutil import hpolib_to_caffenet
-from cappuccino.ensembles import predict, weighted_ensemble
+#from cappuccino.ensembles import predict, weighted_ensemble
 
 
 def get_current_ybest():
@@ -130,14 +130,10 @@ def get_last_model_snapshot(lines):
             return model
     return None
 
-
+"""
 def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
     experiment_dir, working_dir, mean_performance_on_last, **kwargs):
-    """
-        params: parameters coming directly from hpolib
-        construct_caffeconvnet: a function that takes caffeconvnet parameters and constructs a CaffeConvNet
-        mean_performance_on_last: take average of the last x values from the validation network as the reported performance.
-    """
+
     try:
         caffe_convnet_params = hpolib_to_caffenet(params)
 
@@ -218,11 +214,7 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
 
 def hpolib_experiment_weighted_ensemble_main(params, construct_caffeconvnet,
     experiment_dir, working_dir, mean_performance_on_last, **kwargs):
-    """
-        params: parameters coming directly from hpolib
-        construct_caffeconvnet: a function that takes caffeconvnet parameters and constructs a CaffeConvNet
-        mean_performance_on_last: take average of the last x values from the validation network as the reported performance.
-    """
+
     try:
         caffe_convnet_params = hpolib_to_caffenet(params)
 
@@ -298,7 +290,7 @@ def hpolib_experiment_weighted_ensemble_main(params, construct_caffeconvnet,
         #maximum loss:
         return 1.0
 
-
+"""
 def hpolib_experiment_main(params, construct_caffeconvnet,
     experiment_dir, working_dir, mean_performance_on_last, **kwargs):
     """

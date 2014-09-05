@@ -429,7 +429,7 @@ class LeNet5(ConvNetSearchSpace):
 
         params["augment"] = [{"type": "none"}]
         params["input_dropout"] = {"type": "no_dropout"}
-	return params
+        return params
 
     def get_network_parameter_subspace(self):
         #we don't change the network parameters
@@ -448,8 +448,8 @@ class LeNet5(ConvNetSearchSpace):
                                  "stride": 2,
                                  "kernelsize": 2}
 
- 	    if "kernelsize_odd" in params:
-	        params.pop("kernelsize_odd")
+        if "kernelsize_odd" in params:
+            params.pop("kernelsize_odd")
         elif layer_idx == 1:
             params["kernelsize"] = 5
             params["stride"] = 1
@@ -457,8 +457,8 @@ class LeNet5(ConvNetSearchSpace):
             params["pooling"] = {"type": "max",
                                  "stride": 2,
                                  "kernelsize": 2}
-  	    if "kernelsize_odd" in params:
-	        params.pop("kernelsize_odd")
+        if "kernelsize_odd" in params:
+            params.pop("kernelsize_odd")
 
         return params
 
@@ -468,8 +468,9 @@ class LeNet5(ConvNetSearchSpace):
             params["num_output"] = 120
         elif layer_idx == 1:
             params["num_output"] = 84
-	if "num_output_x_128" in params:
-		params.pop("num_output_x_128")
+
+        if "num_output_x_128" in params:
+            params.pop("num_output_x_128")
         return params
 
 
@@ -664,7 +665,6 @@ class Pylearn2Convnet(ConvNetSearchSpace):
                                                  num_classes=10,
                                                  input_dimension=(3, 32, 32))
 
-
     def get_preprocessing_parameter_subspace(self):
         params = super(Pylearn2Convnet, self).get_preprocessing_parameter_subspace()
 #        params["augment"] = {"type": "augment",
@@ -672,7 +672,6 @@ class Pylearn2Convnet(ConvNetSearchSpace):
         params["augment"] = {"type": "none"}
 
         return params
-
 
     def get_network_parameter_subspace(self):
         #we don't change the network parameters
@@ -698,7 +697,7 @@ class Pylearn2Convnet(ConvNetSearchSpace):
 
         params["weight-lr-multiplier"] = 0.05
         params["bias-lr-multiplier"] = 0.05
-        params["weight-weight-decay_multiplier"] = 1  
+        params["weight-weight-decay_multiplier"] = 1
         params["bias-weight-decay_multiplier"] = 0
 
         params["norm"] = {"type": "none"}
@@ -736,17 +735,17 @@ class Pylearn2Convnet(ConvNetSearchSpace):
             params["pooling"] = {"type": "max",
                                  "stride": 2,
                                  "kernelsize": 2}
- 
+
         return params
 
     def get_fc_layer_subspace(self, layer_idx):
         params = super(Pylearn2Convnet, self).get_fc_layer_subspace(layer_idx)
         params["weight-filler"] = {"type": "gaussian",
                                    "std": 0.005}
- 
+
         if layer_idx == 0:
             params["dropout"] = {"type": "dropout",
-                                 "dropout_ratio": 0.5} 
+                                 "dropout_ratio": 0.5}
             params["num_output_x_128"] = 4
         elif layer_idx == 1:
             pass
@@ -755,7 +754,7 @@ class Pylearn2Convnet(ConvNetSearchSpace):
 
         params["weight-lr-multiplier"] = 1
         params["bias-lr-multiplier"] = 1
-        #params["weight-weight-decay_multiplier"] = 1  
+        #params["weight-weight-decay_multiplier"] = 1
         #params["bias-weight-decay_multiplier"] = 0
 
         return params

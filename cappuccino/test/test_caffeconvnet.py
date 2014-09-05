@@ -73,7 +73,6 @@ class TestCaffeConvNet(unittest.TestCase):
                                batch_size_test=100)
         self.assertEqual(expected_output_size, convnet._output_image_size)
 
-
     def test_no_paddding_output_size_calculation(self):
         input_image_size = 32
         kernelsize = 3
@@ -102,7 +101,6 @@ class TestCaffeConvNet(unittest.TestCase):
                                batch_size_valid=100,
                                batch_size_test=100)
         self.assertEqual(expected_output_size, convnet._output_image_size)
-
 
     def test_pooling_output_size_calculation(self):
         input_image_size = 32

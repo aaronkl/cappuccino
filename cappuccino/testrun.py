@@ -9,6 +9,7 @@ from cappuccino.tpesearchspace import convnet_space_to_tpe
 from cappuccino.tpesearchspace import tpe_sample_to_caffenet
 from cappuccino.caffeconvnet import CaffeConvNet
 
+
 def test_fun(kwargs):
     params = tpe_sample_to_caffenet(kwargs)
     print "Test fun called, parameters:"
@@ -23,6 +24,7 @@ def test_fun(kwargs):
                          batch_size_train=100,
                          batch_size_valid=100)
     return caffe.run()
+
 
 def test():
     space = ConvNetSearchSpace(input_dimension=(3, 32, 32))
