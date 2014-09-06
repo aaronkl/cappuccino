@@ -214,22 +214,26 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
             pred_labels = np.argmax(ensemble_pred, axis=1)
             acc = float(np.count_nonzero(true_labels.T[0] == pred_labels)) / npoints
             error = 1 - acc
+            if standard == True:
+                return error
+            elif corr_acc == True:
+                #correlation between the last network and all others
+                corr = average_correlation(predictions)[-1]
+                acc = get_validation_accuracy(output_log.split("\n"))
+                logging.debug("corr: " + str(corr.mean()))
+                logging.debug("acc: " + str(acc))
+                if np.isnan(corr.mean()):
+                    return 1.0
+                return ((1 - acc) + corr.mean()) / 2
+
         else:
             cPickle.dump(np.array([pred]), open("predictions.pkl", 'wb'))
             pred_labels = np.argmax(pred, axis=1)
             npoints = pred.shape[0]
             acc = float(np.count_nonzero(true_labels.T[0] == pred_labels)) / npoints
-            error = 1 - acc
-
-        if standard == True:
-            return error
-        elif corr_acc == True:
-            #correlation between the last network and all others
-            corr = average_correlation(predictions)[-1]
-            acc = get_validation_accuracy(output_log.split("\n"))
-            logging.debug("corr: " + str(corr.mean()))
             logging.debug("acc: " + str(acc))
-            return (1 - acc) + corr.mean()
+
+            error = 1 - acc
 
     except Exception:
         print "Unexpected error:", sys.exc_info()[0]
