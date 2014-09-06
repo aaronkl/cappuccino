@@ -22,6 +22,7 @@ def average_correlation(predictions):
     corr = 0
 
     for i in xrange(0, predictions.shape[1]):
+        #add small epsilon to avoid nan if variance is 0
         corr += np.corrcoef(predictions[:, i, :] + 1e-10)
 
     corr /= predictions.shape[1]
