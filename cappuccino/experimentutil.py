@@ -134,7 +134,7 @@ def get_last_model_snapshot(lines):
 def get_validation_accuracy(lines):
     #example test accuracy:
     #I0512 15:43:21.701407 13354 solver.cpp:183] valid test score #0: 0.0792
-    line_regex = "[^]]+]\sTest score\s#0:\s(\d+\.?\d*)"
+    line_regex = "[^]]+] valid test score\s#0:\s(\d+\.?\d*)"
 
     accuracy = None
     for line in lines:
@@ -200,6 +200,12 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
 
         #predictions of current model
         pred = predict(test_config, model.strip('\n'), ndata, nclasses, batch_size)
+
+        pred_labels = np.argmax(pred, axis=1)
+        npoints = pred.shape[0]
+        acc = float(np.count_nonzero(true_labels.T[0] == pred_labels)) / npoints
+        logging.debug("get valid acc from log: " + str(get_validation_accuracy(output_log.split("\n"))))
+
         #check if predictions.pkl already exist
         if os.path.exists("predictions.pkl"):
             #load previous predictions
@@ -210,31 +216,35 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
             #save predictions
             cPickle.dump(predictions, open("predictions.pkl", 'wb'))
             #check how many predictions are correct
-            npoints = predictions.shape[1]
-            pred_labels = np.argmax(ensemble_pred, axis=1)
-            acc = float(np.count_nonzero(true_labels.T[0] == pred_labels)) / npoints
-            error = 1 - acc
+
             if standard == True:
+                npoints = predictions.shape[1]
+                pred_labels = np.argmax(ensemble_pred, axis=1)
+                acc = float(np.count_nonzero(true_labels.T[0] == pred_labels)) / npoints
+                error = 1 - acc
                 return error
             elif corr_acc == True:
                 #correlation between the last network and all others
 
                 corr = average_correlation(predictions)[-1]
-                acc = get_validation_accuracy(output_log.split("\n"))
+
                 logging.debug("corr: " + str(corr.mean()))
                 logging.debug("acc: " + str(acc))
                 if np.isnan(corr.mean()):
                     return 1.0
-                return ((1 - acc) + corr.mean()) / 2
+                error = 1 - acc
+                return (error + corr.mean()) / 2
 
         else:
             cPickle.dump(np.array([pred]), open("predictions.pkl", 'wb'))
             pred_labels = np.argmax(pred, axis=1)
             npoints = pred.shape[0]
             acc = float(np.count_nonzero(true_labels.T[0] == pred_labels)) / npoints
+
             logging.debug("acc: " + str(acc))
 
             error = 1 - acc
+            return error
 
     except Exception:
         print "Unexpected error:", sys.exc_info()[0]
