@@ -131,6 +131,19 @@ def get_last_model_snapshot(lines):
     return None
 
 
+def get_validation_accuracy(lines):
+    #example test accuracy:
+    #I0512 15:43:21.701407 13354 solver.cpp:183] valid test score #0: 0.0792
+    line_regex = "[^]]+]\sTest score\s#0:\s(\d+\.?\d*)"
+
+    accuracy = None
+    for line in lines:
+            m = re.match(line_regex, line.strip())
+            if m:
+                accuracy = float(m.group(1))
+    return accuracy
+
+
 def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
     experiment_dir, working_dir, mean_performance_on_last, **kwargs):
     """
@@ -213,7 +226,10 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
         elif corr_acc == True:
             #correlation between the last network and all others
             corr = average_correlation(predictions)[-1]
-            return error + corr.mean()
+            acc = get_validation_accuracy(output_log.split("\n"))
+            logging.debug("corr: " + str(corr.mean()))
+            logging.debug("acc: " + str(acc))
+            return (1 - acc) + corr.mean()
 
     except Exception:
         print "Unexpected error:", sys.exc_info()[0]
