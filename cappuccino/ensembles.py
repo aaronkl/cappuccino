@@ -18,6 +18,16 @@ from caffe.classifier import Classifier
 from scipy import optimize
 
 
+def average_correlation(predictions):
+    corr = 0
+
+    for i in xrange(0, predictions.shape[0]):
+        corr += np.corrcoef(predictions[:, i, :])
+
+    corr /= predictions.shape[0]
+    return corr
+
+
 def weighted_error(weights, *args):
     predicitons = args[0]
 
