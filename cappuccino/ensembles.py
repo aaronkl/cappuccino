@@ -54,8 +54,8 @@ def weighted_ensemble(predictions, true_labels, method="cma"):
         bounds = [(0., 1.)]
         for i in xrange(1, weights.shape[0]):
             bounds.append((0, 1))
-
-        weights = optimize.fmin_slsqp(weighted_error, weights, args=(predictions, true_labels), eqcons=[weight_constraint, ], epsilon=0.5, bounds=bounds)
+        logging.error("No scipy installed")
+        #weights = optimize.fmin_slsqp(weighted_error, weights, args=(predictions, true_labels), eqcons=[weight_constraint, ], epsilon=0.5, bounds=bounds)
         #weights, f_min, info = optimize.fmin_l_bfgs_b(weighted_error, weights, args=(predictions, true_labels), approx_grad=True, epsilon=0.1)
 
     elif method == "cma":
@@ -67,7 +67,6 @@ def weighted_ensemble(predictions, true_labels, method="cma"):
             weights = res[0] / np.sum(res[0])
         else:
             logging.error("CMA does not work in a 1D space")
-
     err = weighted_error(weights, predictions, true_labels)
     return err, weights
 
