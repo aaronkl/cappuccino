@@ -21,10 +21,10 @@ from scipy import optimize
 def average_correlation(predictions):
     corr = 0
 
-    for i in xrange(0, predictions.shape[0]):
-        corr += np.corrcoef(predictions[:, i, :])
+    for i in xrange(0, predictions.shape[1]):
+        corr += np.corrcoef(predictions[:, i, :] + 1e-10)
 
-    corr /= predictions.shape[0]
+    corr /= predictions.shape[1]
     return corr
 
 

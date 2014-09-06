@@ -218,6 +218,7 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
                 return error
             elif corr_acc == True:
                 #correlation between the last network and all others
+
                 corr = average_correlation(predictions)[-1]
                 acc = get_validation_accuracy(output_log.split("\n"))
                 logging.debug("corr: " + str(corr.mean()))
