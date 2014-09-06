@@ -12,7 +12,7 @@ import numpy as np
 from collections import defaultdict
 from caffe.proto import caffe_pb2
 from cappuccino.paramutil import hpolib_to_caffenet
-from cappuccino.ensembles import predict, weighted_ensemble
+from cappuccino.ensembles import predict, weighted_ensemble, average_correlation
 
 
 def get_current_ybest():
@@ -131,6 +131,19 @@ def get_last_model_snapshot(lines):
     return None
 
 
+def get_validation_accuracy(lines):
+    #example test accuracy:
+    #I0512 15:43:21.701407 13354 solver.cpp:183] valid test score #0: 0.0792
+    line_regex = "[^]]+]\sTest score\s#0:\s(\d+\.?\d*)"
+
+    accuracy = None
+    for line in lines:
+            m = re.match(line_regex, line.strip())
+            if m:
+                accuracy = float(m.group(1))
+    return accuracy
+
+
 def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
     experiment_dir, working_dir, mean_performance_on_last, **kwargs):
     """
@@ -139,6 +152,8 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
         mean_performance_on_last: take average of the last x values from the validation network as the reported performance.
     """
     try:
+        standard = False
+        corr_acc = True
         caffe_convnet_params = hpolib_to_caffenet(params)
 
         caffeconvnet = construct_caffeconvnet(caffe_convnet_params)
@@ -205,7 +220,16 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
             npoints = pred.shape[0]
             acc = float(np.count_nonzero(true_labels.T[0] == pred_labels)) / npoints
             error = 1 - acc
-        return error
+
+        if standard == True:
+            return error
+        elif corr_acc == True:
+            #correlation between the last network and all others
+            corr = average_correlation(predictions)[-1]
+            acc = get_validation_accuracy(output_log.split("\n"))
+            logging.debug("corr: " + str(corr.mean()))
+            logging.debug("acc: " + str(acc))
+            return (1 - acc) + corr.mean()
 
     except Exception:
         print "Unexpected error:", sys.exc_info()[0]
