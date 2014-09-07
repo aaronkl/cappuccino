@@ -397,14 +397,16 @@ class CaffeConvNet(object):
         prev_layer_name = current_layer_name
 
         # Relu
-        caffe_relu_layer = self._caffe_net.layers.add()
+        #TODO: add sigmoid layer 
+	if params.pop("activation") == "relu":
+            caffe_relu_layer = self._caffe_net.layers.add()
 
-        current_layer_name = current_layer_base_name + "relu"
-        caffe_relu_layer.name = current_layer_name
-        caffe_relu_layer.type = caffe_pb2.LayerParameter.RELU
-        caffe_relu_layer.bottom.append(prev_layer_name)
-        #Note: the operation is made in-place by using the same name twice
-        caffe_relu_layer.top.append(prev_layer_name)
+            current_layer_name = current_layer_base_name + "relu"
+            caffe_relu_layer.name = current_layer_name
+            caffe_relu_layer.type = caffe_pb2.LayerParameter.RELU
+            caffe_relu_layer.bottom.append(prev_layer_name)
+            #Note: the operation is made in-place by using the same name twice
+            caffe_relu_layer.top.append(prev_layer_name)
 
         # Pooling
         pooling_params = params.pop("pooling")
