@@ -375,6 +375,7 @@ def hpolib_experiment_main_ensemble_geometric_mean(params, construct_caffeconvne
         output_log = caffeconvnet.run()
 
         #create a temporary caffe-config for the prediction
+        #TODO: remove code duplicates
         test_config = working_dir + "/caffenet_test.prototxt"
         test_net = copy.deepcopy(caffeconvnet._caffe_net)
         test_net.name = "test"
