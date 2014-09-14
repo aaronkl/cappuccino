@@ -419,64 +419,65 @@ class CaffeConvNet(object):
                 caffe_ac_layer.top.append(prev_layer_name)
 
         # Pooling
-        pooling_params = params.pop("pooling")
-        if pooling_params["type"] == "none":
-            pass
-        elif pooling_params["type"] == "max":
-            kernelsize = int(pooling_params["kernelsize"])
-            stride = int(pooling_params["stride"])
-            skip_layer = False
-            if output_image_size is not None:
-                new_output_image_size = (image_size - kernelsize) / stride + 1
-                if self._restrict_to_legal_configurations and new_output_image_size < self._min_image_size:
-                    skip_layer = True
-                else:
-                    output_image_size = new_output_image_size
-
-            if skip_layer:
-                caffe_pool_layer = self._caffe_net.layers.add()
-
-                current_layer_name = current_layer_base_name + "pool"
-                caffe_pool_layer.name = current_layer_name
-                caffe_pool_layer.type = caffe_pb2.LayerParameter.POOLING
-                caffe_pool_layer.bottom.append(prev_layer_name)
-                caffe_pool_layer.top.append(current_layer_name)
-                caffe_pool_layer.pooling_param.pool = caffe_pb2.PoolingParameter.MAX
-                caffe_pool_layer.pooling_param.kernel_size = kernelsize
-                caffe_pool_layer.pooling_param.stride = stride
-
-                prev_layer_name = current_layer_name
-            else:
-                #we don't do pooling, because we are restricted to only use legal configurations
+        if "pooling" in params:
+            pooling_params = params.pop("pooling")
+            if pooling_params["type"] == "none":
                 pass
-        elif pooling_params["type"] == "ave":
-            kernelsize = int(pooling_params["kernelsize"])
-            stride = int(pooling_params["stride"])
-            skip_layer = False
-            if output_image_size is not None:
-                new_output_image_size = (image_size - kernelsize) / stride + 1
-                if self._restrict_to_legal_configurations and new_output_image_size < self._min_image_size:
-                    skip_layer = True
+            elif pooling_params["type"] == "max":
+                kernelsize = int(pooling_params["kernelsize"])
+                stride = int(pooling_params["stride"])
+                skip_layer = False
+                if output_image_size is not None:
+                    new_output_image_size = (image_size - kernelsize) / stride + 1
+                    if self._restrict_to_legal_configurations and new_output_image_size < self._min_image_size:
+                        skip_layer = True
+                    else:
+                        output_image_size = new_output_image_size
+
+                if skip_layer:
+                    caffe_pool_layer = self._caffe_net.layers.add()
+
+                    current_layer_name = current_layer_base_name + "pool"
+                    caffe_pool_layer.name = current_layer_name
+                    caffe_pool_layer.type = caffe_pb2.LayerParameter.POOLING
+                    caffe_pool_layer.bottom.append(prev_layer_name)
+                    caffe_pool_layer.top.append(current_layer_name)
+                    caffe_pool_layer.pooling_param.pool = caffe_pb2.PoolingParameter.MAX
+                    caffe_pool_layer.pooling_param.kernel_size = kernelsize
+                    caffe_pool_layer.pooling_param.stride = stride
+
+                    prev_layer_name = current_layer_name
                 else:
-                    output_image_size = new_output_image_size
+                    #we don't do pooling, because we are restricted to only use legal configurations
+                    pass
+            elif pooling_params["type"] == "ave":
+                kernelsize = int(pooling_params["kernelsize"])
+                stride = int(pooling_params["stride"])
+                skip_layer = False
+                if output_image_size is not None:
+                    new_output_image_size = (image_size - kernelsize) / stride + 1
+                    if self._restrict_to_legal_configurations and new_output_image_size < self._min_image_size:
+                        skip_layer = True
+                    else:
+                        output_image_size = new_output_image_size
 
-            if not skip_layer:
-                caffe_pool_layer = self._caffe_net.layers.add()
-
-                current_layer_name = current_layer_base_name + "pool"
-                caffe_pool_layer.name = current_layer_name
-                caffe_pool_layer.type = caffe_pb2.LayerParameter.POOLING
-                caffe_pool_layer.bottom.append(prev_layer_name)
-                caffe_pool_layer.top.append(current_layer_name)
-                caffe_pool_layer.pooling_param.pool = caffe_pb2.PoolingParameter.AVE
-                caffe_pool_layer.pooling_param.kernel_size = kernelsize
-                caffe_pool_layer.pooling_param.stride = stride
-
-                prev_layer_name = current_layer_name
-            else:
-                #we don't do pooling in this layer, because we are restricted to only use legal configurations
-                pass
-        #TODO: add stochastic pooling
+                if not skip_layer:
+                    caffe_pool_layer = self._caffe_net.layers.add()
+    
+                    current_layer_name = current_layer_base_name + "pool"
+                    caffe_pool_layer.name = current_layer_name
+                    caffe_pool_layer.type = caffe_pb2.LayerParameter.POOLING
+                    caffe_pool_layer.bottom.append(prev_layer_name)
+                    caffe_pool_layer.top.append(current_layer_name)
+                    caffe_pool_layer.pooling_param.pool = caffe_pb2.PoolingParameter.AVE
+                    caffe_pool_layer.pooling_param.kernel_size = kernelsize
+                    caffe_pool_layer.pooling_param.stride = stride
+    
+                    prev_layer_name = current_layer_name
+                else:
+                    #we don't do pooling in this layer, because we are restricted to only use legal configurations
+                    pass
+            #TODO: add stochastic pooling
 
         normalization_params = params.pop("norm")
         if normalization_params["type"] == "lrn":
@@ -566,25 +567,26 @@ class CaffeConvNet(object):
         prev_layer_name = current_layer_name
 
         #Activation
-        activation_params = params.pop("activation")
-        if activation_params["type"] == "relu":
-            caffe_ac_layer = self._caffe_net.layers.add()
+        if "activation" in params:
+            activation_params = params.pop("activation")
+            if activation_params["type"] == "relu":
+                caffe_ac_layer = self._caffe_net.layers.add()
 
-            current_layer_name = current_layer_base_name + "relu"
-            caffe_ac_layer.name = current_layer_name
-            caffe_ac_layer.type = caffe_pb2.LayerParameter.RELU
-            caffe_ac_layer.bottom.append(prev_layer_name)
-            #Note: the operation is made in-place by using the same name twice
-            caffe_ac_layer.top.append(prev_layer_name)
-        elif activation_params["type"] == "sigmoid":
-            caffe_ac_layer = self._caffe_net.layers.add()
+                current_layer_name = current_layer_base_name + "relu"
+                caffe_ac_layer.name = current_layer_name
+                caffe_ac_layer.type = caffe_pb2.LayerParameter.RELU
+                caffe_ac_layer.bottom.append(prev_layer_name)
+                #Note: the operation is made in-place by using the same name twice
+                caffe_ac_layer.top.append(prev_layer_name)
+            elif activation_params["type"] == "sigmoid":
+                caffe_ac_layer = self._caffe_net.layers.add()
 
-            current_layer_name = current_layer_base_name + "sigmoid"
-            caffe_ac_layer.name = current_layer_name
-            caffe_ac_layer.type = caffe_pb2.LayerParameter.SIGMOID
-            caffe_ac_layer.bottom.append(prev_layer_name)
-            #Note: the operation is made in-place by using the same name twice
-            caffe_ac_layer.top.append(prev_layer_name)
+                current_layer_name = current_layer_base_name + "sigmoid"
+                caffe_ac_layer.name = current_layer_name
+                caffe_ac_layer.type = caffe_pb2.LayerParameter.SIGMOID
+                caffe_ac_layer.bottom.append(prev_layer_name)
+                #Note: the operation is made in-place by using the same name twice
+                caffe_ac_layer.top.append(prev_layer_name)
 
         #Dropout
         dropout_params = params.pop("dropout")
