@@ -449,6 +449,8 @@ class CaffeConvNet(object):
                     prev_layer_name = current_layer_name
                 else:
                     #we don't do pooling, because we are restricted to only use legal configurations
+                    import logging
+                    logging.error("skip pooling")
                     pass
             elif pooling_params["type"] == "ave":
                 kernelsize = int(pooling_params["kernelsize"])
@@ -463,7 +465,7 @@ class CaffeConvNet(object):
 
                 if not skip_layer:
                     caffe_pool_layer = self._caffe_net.layers.add()
-    
+
                     current_layer_name = current_layer_base_name + "pool"
                     caffe_pool_layer.name = current_layer_name
                     caffe_pool_layer.type = caffe_pb2.LayerParameter.POOLING
@@ -472,10 +474,11 @@ class CaffeConvNet(object):
                     caffe_pool_layer.pooling_param.pool = caffe_pb2.PoolingParameter.AVE
                     caffe_pool_layer.pooling_param.kernel_size = kernelsize
                     caffe_pool_layer.pooling_param.stride = stride
-    
+
                     prev_layer_name = current_layer_name
                 else:
                     #we don't do pooling in this layer, because we are restricted to only use legal configurations
+                    logging.error("skip pooling")
                     pass
             #TODO: add stochastic pooling
 
