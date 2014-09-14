@@ -247,12 +247,12 @@ class ConvNetSearchSpace(object):
         params["kernelsize_odd"] = Parameter((ConvNetSearchSpace.KERNEL_ABSOLUTE_MIN_SIZE-1)/2,
            (max_kernel_size-1)/2, is_int=True)
         #reducing the search spacing by only allowing multiples of 128
-        MIN_NUM_OUTPUT=16
+        MIN_NUM_OUTPUT = 16
         params["num_output"] = Parameter(MIN_NUM_OUTPUT, self.conv_layer_max_num_output,
             default_val=max(MIN_NUM_OUTPUT, min(96, self.conv_layer_max_num_output)),
             is_int=True)
         params["stride"] = 1
-        
+
         #sparse: 15
         params["weight-filler"] = [{"type": "gaussian",
                                     "std": Parameter(0.000001,.1,
@@ -355,9 +355,16 @@ class ConvNetSearchSpace(object):
 
         last_layer = layer_idx == self.max_fc_layers
         if not last_layer:
-            params["num_output_x_128"] = Parameter(1, self.fc_layer_max_num_output_x_128,
-                default_val=min(8, self.fc_layer_max_num_output_x_128),
-                is_int=True,)
+
+            if "num_output_x_128" in params:
+                params["num_output_x_128"] = Parameter(1, self.fc_layer_max_num_output_x_128,
+                                                       default_val=min(8, self.fc_layer_max_num_output_x_128),
+                                                       is_int=True,)
+            else:
+                MIN_NUM_OUTPUT = 64
+                params["num_output"] = Parameter(MIN_NUM_OUTPUT, self.fc_layer_max_num_output_x_128 * 128,
+                                                 default_val=max(MIN_NUM_OUTPUT, self.fc_layer_max_num_output_x_128 * 128),
+                                                 is_int=True)
             params["activation"] = "relu"
             params["dropout"] = [{"type": "dropout",
                                   "dropout_ratio": Parameter(0.05, 0.95,

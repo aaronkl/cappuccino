@@ -12,7 +12,7 @@ import numpy as np
 from collections import defaultdict
 from caffe.proto import caffe_pb2
 from cappuccino.paramutil import hpolib_to_caffenet
-from cappuccino.ensembles import predict, weighted_ensemble, average_correlation
+from cappuccino.ensembles import predict, weighted_ensemble, average_correlation, create_test_config, get_true_labels, entropy_measure
 
 
 def get_current_ybest():
@@ -374,23 +374,7 @@ def hpolib_experiment_main_ensemble_entropy(params, construct_caffeconvnet,
         caffeconvnet = construct_caffeconvnet(caffe_convnet_params)
         output_log = caffeconvnet.run()
 
-        #create a temporary caffe-config for the prediction
-        test_config = working_dir + "/caffenet_test.prototxt"
-        test_net = copy.deepcopy(caffeconvnet._caffe_net)
-        test_net.name = "test"
-        test_net.layers[0].hdf5_data_param.source = caffeconvnet._valid_file
-        test_net.layers[0].hdf5_data_param.batch_size = caffeconvnet._batch_size_valid
-
-        last_layer_top = test_net.layers[-1].top[0]
-        prob_layer = test_net.layers.add()
-        prob_layer.name = "prob"
-        prob_layer.type = caffe_pb2.LayerParameter.SOFTMAX
-        prob_layer.bottom.append(last_layer_top)
-        prob_layer.top.append("prob")
-
-        with open(test_config, "wb") as fh:
-            fh.write(str(test_net))
-            fh.close()
+        test_config = create_test_config(working_dir, caffeconvnet._caffe_net, caffeconvnet._valid_file, caffeconvnet._batch_size_valid)
 
         model = get_last_model_snapshot(output_log.split("\n"))
         model = working_dir + "/" + model
@@ -398,14 +382,7 @@ def hpolib_experiment_main_ensemble_entropy(params, construct_caffeconvnet,
             log_error(experiment_dir, output_log)
             raise Exception("no valid model found")
 
-        batch_size = caffeconvnet._batch_size_valid
-        valid_file = caffeconvnet._valid_file
-        valid = open(valid_file, 'r').readline().strip('\n')
-        #load valid data labels
-        f = h5py.File(valid, "r")
-        l = f['label']
-        true_labels = np.array(l)
-        f.close()
+        true_labels = get_true_labels(caffeconvnet._valid_file)
 
         ndata = true_labels.shape[0]
         assert ndata > 0
@@ -414,6 +391,7 @@ def hpolib_experiment_main_ensemble_entropy(params, construct_caffeconvnet,
         assert nclasses > 2
 
         #predictions of current model
+        batch_size = caffeconvnet._batch_size_valid
         pred = predict(test_config, model.strip('\n'), ndata, nclasses, batch_size)
 
         pred_labels = np.argmax(pred, axis=1)
@@ -443,18 +421,6 @@ def hpolib_experiment_main_ensemble_entropy(params, construct_caffeconvnet,
         log_error(experiment_dir, str(traceback.format_exc()))
         #maximum loss:
         return 1.0
-
-
-def entropy_measure(pred, true_labels):
-    N = pred.shape[1]
-    L = pred.shape[0]
-    max_div = L - np.ceil(L / 2)
-    pred_labels = pred.argmax(axis=2)
-    E = 0
-    for i in xrange(0, N):
-        l = np.count_nonzero(pred_labels[:, i] == true_labels[i])
-        E += (1 / max_div) * min(l, L - l)
-    return E / N
 
 
 def hpolib_experiment_main_ensemble_geometric_mean(params, construct_caffeconvnet,
