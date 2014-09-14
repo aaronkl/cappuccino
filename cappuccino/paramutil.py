@@ -2,6 +2,7 @@ import ast
 import copy
 import re
 
+
 def value_to_literal(value):
     """
         Tries to convert a value to either a 
@@ -12,17 +13,18 @@ def value_to_literal(value):
     except:
         return value
 
+
 def construct_parameter_tree_from_labels(params,
-                                         escape_char_depth = "/",
-                                         escape_char_choice = "@"):
+                                         escape_char_depth="/",
+                                         escape_char_choice="@"):
     """
         Given a dictionary of {label: parameter}, where label encodes the
         depth in the parameter tree, e.g. level0/level1/level2
-        as well as the selected choice parametere, e.g. level0#choice@selectedval
+        as well as the selected choice parameter, e.g. level0#choice@selectedval
         We convert this back to a tree of parameter values in order to feed it
         to a target algorithm.
     """
-    param_tree = {} 
+    param_tree = {}
 
     for label, value in params.iteritems():
         value = value_to_literal(value)
@@ -36,7 +38,7 @@ def construct_parameter_tree_from_labels(params,
                 choices = step.split(escape_char_choice)
                 assert(len(choices) == 2), "Only one choice field allowed per level."
                 step, node_type = choices
-            if idx == len(tree_path)-1:
+            if idx == len(tree_path) - 1:
                 #are we overriding with a different value
                 assert step not in current_node or current_node[step] == value,\
                         "%s already set (%s) to: %s vs %s all params: %s" % (step,tree_path,
@@ -55,6 +57,7 @@ def construct_parameter_tree_from_labels(params,
 
     return param_tree
 
+
 def group_layers(params_tree):
     """
         params_tree: a dictionary with the conv-layer, fc-layer and network parameters.
@@ -65,11 +68,11 @@ def group_layers(params_tree):
     fc_layers = []
     for name, val in params_tree.iteritems():
         if name.startswith("conv-layer-"):
-            idx = int(name.split("-")[2]) 
-            conv_layers.append((idx,val))
+            idx = int(name.split("-")[2])
+            conv_layers.append((idx, val))
         elif name.startswith("fc-layer-"):
             idx = int(name.split("-")[2])
-            fc_layers.append((idx,val))
+            fc_layers.append((idx, val))
         else:
             pass
 
@@ -108,6 +111,7 @@ def remove_inactive_layers(params):
     fc_layers = fc_layers[:num_fc_layers]
 
     return (preproc_params, conv_layers, fc_layers, network_params)
+
 
 def flatten_to_leaves(params):
     """

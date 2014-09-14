@@ -8,6 +8,7 @@ import hyperopt.pyll.stochastic
 
 NUM_RANDOM_SAMPLES = 100
 
+
 class TestTPECaffnetIntegration(unittest.TestCase):
 
     def test_random_param_space_samples(self):
@@ -22,7 +23,7 @@ class TestTPECaffnetIntegration(unittest.TestCase):
         tpe_space = convnet_space_to_tpe(space)
 
         for i in range(0, NUM_RANDOM_SAMPLES):
-            print "Testing param sample %d/%d\r" % (i+1, NUM_RANDOM_SAMPLES),
+            print "Testing param sample %d/%d\r" % (i + 1, NUM_RANDOM_SAMPLES),
             tpe_sample = hyperopt.pyll.stochastic.sample(tpe_space)
             caffenet_params = tpe_sample_to_caffenet(tpe_sample)
             try:
@@ -42,7 +43,7 @@ class TestTPECaffnetIntegration(unittest.TestCase):
                             "with parameters: %s" % str(caffenet_params)))
         #overwrite the carriage return
         print ""
- 
+
 
 if __name__ == '__main__':
     unittest.main()

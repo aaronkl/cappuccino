@@ -2,6 +2,7 @@ import unittest
 from cappuccino.convnetsearchspace import ConvNetSearchSpace
 from cappuccino.convnetsearchspace import Parameter
 
+
 class TestConvNetSearchSpace(unittest.TestCase):
 
     def test_parameter(self):
