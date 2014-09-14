@@ -397,7 +397,8 @@ class CaffeConvNet(object):
         prev_layer_name = current_layer_name
 
         if "activation" in params:
-            if params["activation"] == "relu":
+            activation_params = params.pop("activation")
+            if activation_params["type"] == "relu":
                 caffe_ac_layer = self._caffe_net.layers.add()
 
                 current_layer_name = current_layer_base_name + "relu"
@@ -407,7 +408,7 @@ class CaffeConvNet(object):
                 #Note: the operation is made in-place by using the same name twice
                 caffe_ac_layer.top.append(prev_layer_name)
 
-            elif params["activation"] == "sigmoid":
+            elif activation_params["type"] == "sigmoid":
                 caffe_ac_layer = self._caffe_net.layers.add()
 
                 current_layer_name = current_layer_base_name + "sigmoid"
@@ -417,7 +418,6 @@ class CaffeConvNet(object):
                 #Note: the operation is made in-place by using the same name twice
                 caffe_ac_layer.top.append(prev_layer_name)
 
-            params.pop("activation")
         # Pooling
         pooling_params = params.pop("pooling")
         if pooling_params["type"] == "none":
@@ -566,28 +566,25 @@ class CaffeConvNet(object):
         prev_layer_name = current_layer_name
 
         #Activation
-        if "activation" in params:
-            if params["activation"] == "relu":
-                caffe_ac_layer = self._caffe_net.layers.add()
+        activation_params = params.pop("activation")
+        if activation_params["type"] == "relu":
+            caffe_ac_layer = self._caffe_net.layers.add()
 
-                current_layer_name = current_layer_base_name + "relu"
-                caffe_ac_layer.name = current_layer_name
-                caffe_ac_layer.type = caffe_pb2.LayerParameter.RELU
-                caffe_ac_layer.bottom.append(prev_layer_name)
-                #Note: the operation is made in-place by using the same name twice
-                caffe_ac_layer.top.append(prev_layer_name)
-            elif params["activation"] == "sigmoid":
-                caffe_ac_layer = self._caffe_net.layers.add()
+            current_layer_name = current_layer_base_name + "relu"
+            caffe_ac_layer.name = current_layer_name
+            caffe_ac_layer.type = caffe_pb2.LayerParameter.RELU
+            caffe_ac_layer.bottom.append(prev_layer_name)
+            #Note: the operation is made in-place by using the same name twice
+            caffe_ac_layer.top.append(prev_layer_name)
+        elif activation_params["type"] == "sigmoid":
+            caffe_ac_layer = self._caffe_net.layers.add()
 
-                current_layer_name = current_layer_base_name + "sigmoid"
-                caffe_ac_layer.name = current_layer_name
-                caffe_ac_layer.type = caffe_pb2.LayerParameter.SIGMOID
-                caffe_ac_layer.bottom.append(prev_layer_name)
-                #Note: the operation is made in-place by using the same name twice
-                caffe_ac_layer.top.append(prev_layer_name)
-            params.pop("activation")
-        else:
-            assert False, "activation is missing for fc layer"
+            current_layer_name = current_layer_base_name + "sigmoid"
+            caffe_ac_layer.name = current_layer_name
+            caffe_ac_layer.type = caffe_pb2.LayerParameter.SIGMOID
+            caffe_ac_layer.bottom.append(prev_layer_name)
+            #Note: the operation is made in-place by using the same name twice
+            caffe_ac_layer.top.append(prev_layer_name)
 
         #Dropout
         dropout_params = params.pop("dropout")
