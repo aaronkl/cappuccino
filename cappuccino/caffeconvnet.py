@@ -434,7 +434,7 @@ class CaffeConvNet(object):
                     else:
                         output_image_size = new_output_image_size
 
-                if skip_layer:
+                if not skip_layer:
                     caffe_pool_layer = self._caffe_net.layers.add()
 
                     current_layer_name = current_layer_base_name + "pool"
@@ -449,8 +449,6 @@ class CaffeConvNet(object):
                     prev_layer_name = current_layer_name
                 else:
                     #we don't do pooling, because we are restricted to only use legal configurations
-                    import logging
-                    logging.error("skip pooling")
                     pass
             elif pooling_params["type"] == "ave":
                 kernelsize = int(pooling_params["kernelsize"])
