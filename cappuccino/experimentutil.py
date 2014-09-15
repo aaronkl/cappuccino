@@ -477,7 +477,8 @@ def hpolib_experiment_main_mean_entropy(params, construct_caffeconvnet,
             return entropy(predictions)
 
         else:
-            return entropy(np.array([predictions]))
+            cPickle.dump(np.array([pred]), open("predictions.pkl", 'wb'))
+            return entropy(np.array([pred]))
 
     except Exception:
         print "Unexpected error:", sys.exc_info()[0]
