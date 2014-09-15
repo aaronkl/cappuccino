@@ -397,8 +397,8 @@ class CaffeConvNet(object):
         prev_layer_name = current_layer_name
 
         if "activation" in params:
-            activation_params = params.pop("activation")
-            if activation_params["type"] == "relu":
+            activation = params.pop("activation")
+            if activation == "relu":
                 caffe_ac_layer = self._caffe_net.layers.add()
 
                 current_layer_name = current_layer_base_name + "relu"
@@ -408,7 +408,7 @@ class CaffeConvNet(object):
                 #Note: the operation is made in-place by using the same name twice
                 caffe_ac_layer.top.append(prev_layer_name)
 
-            elif activation_params["type"] == "sigmoid":
+            elif activation == "sigmoid":
                 caffe_ac_layer = self._caffe_net.layers.add()
 
                 current_layer_name = current_layer_base_name + "sigmoid"
@@ -478,6 +478,7 @@ class CaffeConvNet(object):
                     prev_layer_name = current_layer_name
                 else:
                     #we don't do pooling in this layer, because we are restricted to only use legal configurations
+                    import logging
                     logging.error("skip pooling")
                     pass
             #TODO: add stochastic pooling
@@ -571,8 +572,8 @@ class CaffeConvNet(object):
 
         #Activation
         if "activation" in params:
-            activation_params = params.pop("activation")
-            if activation_params["type"] == "relu":
+            activation = params.pop("activation")
+            if activation == "relu":
                 caffe_ac_layer = self._caffe_net.layers.add()
 
                 current_layer_name = current_layer_base_name + "relu"
@@ -581,7 +582,7 @@ class CaffeConvNet(object):
                 caffe_ac_layer.bottom.append(prev_layer_name)
                 #Note: the operation is made in-place by using the same name twice
                 caffe_ac_layer.top.append(prev_layer_name)
-            elif activation_params["type"] == "sigmoid":
+            elif activation == "sigmoid":
                 caffe_ac_layer = self._caffe_net.layers.add()
 
                 current_layer_name = current_layer_base_name + "sigmoid"
