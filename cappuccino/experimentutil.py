@@ -152,8 +152,8 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
         mean_performance_on_last: take average of the last x values from the validation network as the reported performance.
     """
     try:
-        standard = False
-        corr_acc = True
+        standard = True
+        corr_acc = False
         caffe_convnet_params = hpolib_to_caffenet(params)
 
         caffeconvnet = construct_caffeconvnet(caffe_convnet_params)
@@ -212,7 +212,7 @@ def hpolib_experiment_ensemble_main(params, construct_caffeconvnet,
             predictions = cPickle.load(open("predictions.pkl", 'rb'))
             #ensemble prediction
             predictions = np.concatenate((predictions, np.array([pred])), axis=0)
-            ensemble_pred = predictions.sum(axis=0)
+            ensemble_pred = predictions.mean(axis=0)
             #save predictions
             cPickle.dump(predictions, open("predictions.pkl", 'wb'))
             #check how many predictions are correct
