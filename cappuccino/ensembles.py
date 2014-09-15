@@ -108,6 +108,12 @@ def entropy_measure(pred, true_labels):
     return E / N
 
 
+def entropy(predictions):
+    p_x = predictions.mean(axis=0)
+    h = -(p_x * np.log(p_x)).sum(axis=1)
+    return h.mean()
+
+
 def create_test_config(working_dir, net, valid_file, batch_size):
     #create a temporary caffe-config for the prediction
     test_config = working_dir + "/caffenet_test.prototxt"
