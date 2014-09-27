@@ -489,7 +489,7 @@ class Cifar10CudaConvnet(ConvNetSearchSpace):
         and only the network parameters, like the learning rate,
         are tuned.
 
-        The definition is inspired (but only loosly based on) by the cuda-convnet:
+        The definition is inspired (but only loosely based on) by the cuda-convnet:
         https://code.google.com/p/cuda-convnet/
     """
 
@@ -503,9 +503,9 @@ class Cifar10CudaConvnet(ConvNetSearchSpace):
     def get_preprocessing_parameter_subspace(self):
         params = super(Cifar10CudaConvnet, self).get_preprocessing_parameter_subspace()
         #crop by 4 on every side to get 32 - 4 - 4 = 24
-        params["augment"] = {"type": "augment",
-                             "crop_size": 4}
-
+#         params["augment"] = {"type": "augment",
+#                              "crop_size": 4}
+        params["augment"] = {"type": "none"}
         return params
 
     def get_network_parameter_subspace(self):
@@ -588,9 +588,10 @@ class Cifar10ConvFixed(ConvNetSearchSpace):
     def get_preprocessing_parameter_subspace(self):
         params = super(Cifar10ConvFixed, self).get_preprocessing_parameter_subspace()
         #crop by 4 on every side to get 32 - 4 - 4 = 24
-        params["augment"] = {"type": "augment",
-                             "crop_size": Parameter(1, 4, is_int=True)}
-
+#         params["augment"] = {"type": "augment",
+#                              "crop_size": Parameter(1, 4, is_int=True)}
+        params["augment"] = {"type": "none"}
+        return params
         return params
 
     def get_network_parameter_subspace(self):
