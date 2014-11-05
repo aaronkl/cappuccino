@@ -229,8 +229,8 @@ class CaffeConvNet(object):
 
         if self._test_file is not None:
             self._caffe_net_test = copy.deepcopy(self._caffe_net)
-            self._add_softmax_accuray_layers(self._caffe_net_test)
-            #self._add_softmax_layers(self._caffe_net_test)
+            #self._add_softmax_accuray_layers(self._caffe_net_test)
+            self._add_softmax_layers(self._caffe_net_test)
             self._caffe_net_test.name = "test"
             self._caffe_net_test.layers[0].hdf5_data_param.source = self._test_file
             self._caffe_net_test.layers[0].hdf5_data_param.batch_size = self._batch_size_test
