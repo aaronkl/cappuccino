@@ -168,7 +168,7 @@ def convnet_space_to_smac(convnet_space):
     assert(isinstance(convnet_space, ConvNetSearchSpace))
     params = []
 
-    #add format hint: 
+    #add format hint:
     #TODO: alteratively add it to each parameter name?
     format_hint = SMACCategorialParameter(
         "format",
